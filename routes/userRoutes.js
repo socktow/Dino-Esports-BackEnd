@@ -17,7 +17,8 @@ const {
     getTournamentById,
     updateTournament,
     deleteTournament,
-    addTeamToTournament
+    addTeamToTournament,
+    getTournamentsByUser
 } = require('../controllers/tournamentController');
 
 // Get user profile (protected route)
@@ -36,6 +37,7 @@ router.put('/password', protect, updatePassword);
 // Tournament routes
 router.post('/tournaments', protect, upload.single('logo'), createTournament);
 router.get('/tournaments', getTournaments);
+router.get('/tournaments/host/:username', protect, getTournamentsByUser);
 router.get('/tournaments/:tournamentId', getTournamentById);
 router.put('/tournaments/:tournamentId', protect, upload.single('logo'), updateTournament);
 router.delete('/tournaments/:tournamentId', protect, deleteTournament);

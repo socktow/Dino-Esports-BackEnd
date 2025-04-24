@@ -102,6 +102,43 @@ const getTournamentById = async (req, res) => {
     }
 };
 
+const getTournamentsByUser = async (req, res) => {
+    try {
+        const username = req.params.username;
+        
+        // Truy vấn tournament theo trường host
+        const tournaments = await Tournament.find({ host: username }).lean();
+
+        if (!tournaments || tournaments.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No tournaments found for this user'
+            });
+        }
+
+        // Làm sạch dữ liệu tournament và đội
+        const cleanedTournaments = tournaments.map(t => {
+            const { _id, __v, createdAt, updatedAt, teams = [], ...rest } = t;
+            const cleanedTeams = teams.map(({ _id, ...team }) => team);
+            return {
+                ...rest,
+                teams: cleanedTeams
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            data: cleanedTournaments
+        });
+    } catch (error) {
+        console.error('Error fetching tournaments by user:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching tournaments by user'
+        });
+    }
+};
+
 // Update tournament
 const updateTournament = async (req, res) => {
     try {
@@ -245,5 +282,6 @@ module.exports = {
     getTournamentById,
     updateTournament,
     deleteTournament,
-    addTeamToTournament
+    addTeamToTournament,
+    getTournamentsByUser
 }; 
