@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Counter = require('./Counter'); 
+const Counter = require('./Counter');
 
 const tournamentSchema = new mongoose.Schema({
     tournamentId: {
@@ -43,14 +43,20 @@ const tournamentSchema = new mongoose.Schema({
 // Pre-save hook để auto tăng tournamentId
 tournamentSchema.pre('save', async function(next) {
     if (this.isNew) {
-        const Counter = await Counter.findOneAndUpdate(
-            { name: 'tournamentId' },
-            { $inc: { value: 1 } },
-            { new: true, upsert: true }
-        );
-        this.tournamentId = Counter.value;
+        try {
+            const counter = await Counter.findOneAndUpdate(
+                { name: 'tournamentId' },
+                { $inc: { value: 1 } },
+                { new: true, upsert: true }
+            );
+            this.tournamentId = counter.value;
+            next();
+        } catch (error) {
+            next(error);
+        }
+    } else {
+        next();
     }
-    next();
 });
 
 module.exports = mongoose.model('Tournament', tournamentSchema);

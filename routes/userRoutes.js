@@ -8,9 +8,7 @@ const {
 } = require('../controllers/userController');
 
 const {
-    upload,
-    uploadImage,
-    deleteImage
+    upload
 } = require('../controllers/uploadController');
 
 const {
@@ -32,8 +30,8 @@ router.put('/email', protect, updateEmail);
 router.put('/password', protect, updatePassword);
 
 // Upload routes
-router.post('/upload', protect, upload.single('image'), uploadImage);
-router.delete('/upload/:publicId(*)', protect, deleteImage);
+// router.post('/upload', protect, upload.single('image'), uploadImage);
+// router.delete('/upload/:publicId(*)', protect, deleteImage);
 
 // Tournament routes
 router.post('/tournaments', protect, upload.single('logo'), createTournament);

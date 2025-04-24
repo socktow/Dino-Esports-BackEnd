@@ -19,7 +19,11 @@ app.use(express.json());
 app.use(cors());
 
 // Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+app.use(
+  '/api-docs',
+  swaggerUi.serveFiles(swaggerSpecs),
+  swaggerUi.setup(swaggerSpecs, { explorer: true })
+);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -27,7 +31,7 @@ app.use('/api/users', userRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to Dino Esports API' });
+  res.json({ message: 'Welcome to ChuChu Esports API' });
 });
 
 // Error handling middleware

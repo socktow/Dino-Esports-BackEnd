@@ -7,12 +7,25 @@ const createTournament = async (req, res) => {
     try {
         const { name } = req.body;
         
-        // Get host from authenticated user
-        const host = req.user.username;
-        
-        // Get logo URL from Cloudinary if file was uploaded
-        const logo = req.file ? req.file.path : req.body.logo;
-        
+        // Validate required fields
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tournament name is required'
+            });
+        }
+
+        // Require logo file to be uploaded
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tournament logo is required'
+            });
+        }
+
+        const host = req.user ? req.user.username : 'system';
+        const logo = req.file.path;
+
         const tournament = new Tournament({
             name,
             host,
@@ -21,6 +34,9 @@ const createTournament = async (req, res) => {
         });
 
         await tournament.save();
+
+        console.log('Tournament created successfully:', tournament);
+
         res.status(201).json({
             success: true,
             data: tournament
@@ -29,7 +45,8 @@ const createTournament = async (req, res) => {
         console.error('Error creating tournament:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Error creating tournament' 
+            message: 'Error creating tournament',
+            error: error.message
         });
     }
 };
@@ -54,16 +71,27 @@ const getTournaments = async (req, res) => {
 // Get tournament by ID
 const getTournamentById = async (req, res) => {
     try {
-        const tournament = await Tournament.findOne({ tournamentId: req.params.tournamentId });
+        const tournament = await Tournament.findOne({ tournamentId: req.params.tournamentId }).lean();
+
         if (!tournament) {
             return res.status(404).json({ 
                 success: false,
                 message: 'Tournament not found' 
             });
         }
+
+        // Destructure and remove top-level fields
+        const { _id, __v, createdAt, updatedAt, teams = [], ...rest } = tournament;
+
+        // Remove _id from each team
+        const cleanedTeams = teams.map(({ _id, ...team }) => team);
+
         res.status(200).json({
             success: true,
-            data: tournament
+            data: {
+                ...rest,
+                teams: cleanedTeams
+            }
         });
     } catch (error) {
         console.error('Error fetching tournament:', error);
@@ -78,67 +106,61 @@ const getTournamentById = async (req, res) => {
 const updateTournament = async (req, res) => {
     try {
         const { name } = req.body;
+        const tournamentId = req.params.tournamentId;
         
-        // Get logo URL from Cloudinary if file was uploaded
-        const logo = req.file ? req.file.path : req.body.logo;
-        
-        const tournament = await Tournament.findOneAndUpdate(
-            { tournamentId: req.params.tournamentId },
-            { name, logo },
-            { new: true }
-        );
-        
+        // Find the tournament first
+        const tournament = await Tournament.findOne({ tournamentId });
         if (!tournament) {
             return res.status(404).json({ 
                 success: false,
                 message: 'Tournament not found' 
             });
         }
+
+        // Clone old data for response
+        const oldData = {
+            name: tournament.name,
+            logo: tournament.logo
+        };
+
+        // Prepare update data
+        const updateData = {
+            name: name || tournament.name,
+            logo: req.file ? req.file.path : tournament.logo
+        };
+
+        const updatedTournament = await Tournament.findOneAndUpdate(
+            { tournamentId },
+            updateData,
+            { new: true }
+        );
+
         res.status(200).json({
             success: true,
-            data: tournament
+            message: 'Tournament updated successfully',
+            data: {
+                Old: oldData,
+                New: updatedTournament
+            }
         });
     } catch (error) {
         console.error('Error updating tournament:', error);
         res.status(500).json({ 
             success: false,
-            message: 'Error updating tournament' 
+            message: 'Error updating tournament',
+            error: error.message
         });
     }
 };
 
-// Delete tournament
-const deleteTournament = async (req, res) => {
-    try {
-        const tournament = await Tournament.findOneAndDelete({ tournamentId: req.params.tournamentId });
-        if (!tournament) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Tournament not found' 
-            });
-        }
-        res.status(200).json({ 
-            success: true,
-            message: 'Tournament deleted successfully' 
-        });
-    } catch (error) {
-        console.error('Error deleting tournament:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error deleting tournament' 
-        });
-    }
-};
-
+// Add team to tournament
 const addTeamToTournament = async (req, res) => {
     try {
         const { tournamentId } = req.params;
         const { teamName, teamTag } = req.body;
 
-        // Get logo URL from Cloudinary if file was uploaded
         const logo = req.file ? req.file.path : req.body.logo;
 
-        // Validate required fields
         if (!teamName || !teamTag || !logo) {
             return res.status(400).json({
                 success: false,
@@ -154,7 +176,6 @@ const addTeamToTournament = async (req, res) => {
             });
         }
 
-        // Check if team name or tag already exists in tournament
         const existingTeam = tournament.teams.find(
             team => team.teamName === teamName || team.teamTag === teamTag
         );
@@ -166,24 +187,54 @@ const addTeamToTournament = async (req, res) => {
             });
         }
 
-        // Add new team
-        tournament.teams.push({
+        const newTeam = {
             teamName,
             teamTag,
             logo
-        });
+        };
 
+        tournament.teams.push(newTeam);
         await tournament.save();
 
         res.status(200).json({
             success: true,
-            data: tournament
+            message: 'Thêm Team Thành Công',
+            data: newTeam
         });
     } catch (error) {
         console.error('Error adding team to tournament:', error);
         res.status(500).json({
             success: false,
-            message: 'Error adding team to tournament'
+            message: 'Error adding team to tournament',
+            error: error.message
+        });
+    }
+};
+
+// Delete tournament
+const deleteTournament = async (req, res) => {
+    try {
+        const tournament = await Tournament.findOne({ tournamentId: req.params.tournamentId });
+        if (!tournament) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Tournament not found' 
+            });
+        }
+
+        // Delete the tournament from database
+        await Tournament.findOneAndDelete({ tournamentId: req.params.tournamentId });
+
+        res.status(200).json({ 
+            success: true,
+            message: 'Tournament deleted successfully' 
+        });
+    } catch (error) {
+        console.error('Error deleting tournament:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error deleting tournament',
+            error: error.message
         });
     }
 };

@@ -9,13 +9,12 @@ cloudinary.config();
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
-        folder: 'tournament-logos',
-        format: async () => 'webp',
+        folder: 'tournament',
+        format: 'webp',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ quality: "auto" }] 
+        transformation: [{ quality: "auto" }]
     }
 });
-
 
 const upload = multer({ storage: storage });
 
@@ -36,24 +35,7 @@ const uploadImage = async (req, res) => {
     }
 };
 
-// Delete image
-const deleteImage = async (req, res) => {
-    try {
-        const { publicId } = req.params;
-        const result = await cloudinary.uploader.destroy(publicId);
-        if (result.result !== 'ok') {
-            return res.status(400).json({ message: 'Image could not be deleted', cloudinaryResponse: result });
-        }
-
-        res.status(200).json({ message: 'Image deleted successfully' });
-    } catch (error) {
-        console.error('Delete error:', error);
-        res.status(500).json({ message: 'Error deleting image' });
-    }
-};
-
 module.exports = {
     upload,
     uploadImage,
-    deleteImage
 }; 
