@@ -21,6 +21,14 @@ const {
     getTournamentsByUser
 } = require('../controllers/tournamentController');
 
+const {
+    getDisplayByHost,
+    createDisplay,
+    resetDisplay,
+    updateTeamConfig,
+    updatePlayerConfig
+} = require('../controllers/displayController');
+
 // Get user profile (protected route)
 router.get('/profile', protect, getUserProfile);
 
@@ -42,5 +50,12 @@ router.get('/tournaments/:tournamentId', getTournamentById);
 router.put('/tournaments/:tournamentId', protect, upload.single('logo'), updateTournament);
 router.delete('/tournaments/:tournamentId', protect, deleteTournament);
 router.post('/tournaments/:tournamentId/addteam', protect, upload.single('logo'), addTeamToTournament);
+
+// Display routes
+router.get('/display/:host', protect, getDisplayByHost);
+router.post('/display/:host', protect, createDisplay);
+router.put('/display/reset/:host', protect, resetDisplay);
+router.put('/display/team/:host', protect, updateTeamConfig);
+router.put('/display/player/:host', protect, updatePlayerConfig);
 
 module.exports = router; 

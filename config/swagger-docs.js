@@ -204,19 +204,23 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - name
+ *               - logo
  *             properties:
  *               name:
  *                 type: string
  *               logo:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Tournament created successfully
+ *       400:
+ *         description: Tournament name and logo are required
  *       500:
  *         description: Server error
  */
@@ -269,7 +273,7 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -277,6 +281,7 @@
  *                 type: string
  *               logo:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Tournament updated successfully
@@ -324,7 +329,7 @@
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -338,6 +343,7 @@
  *                 type: string
  *               logo:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Team added successfully
